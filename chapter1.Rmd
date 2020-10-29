@@ -1,7 +1,14 @@
 
 # About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+*I heard about IODS from Kimmo's Facebook posting. I have recently started learning to use Rstudio and GitHub at Kela and this seemed like a perfect course to deepen my knowledge. 
+**Feeling very excited about this course!** 
+Here is a [link](github.com/marjopyy/IODS-project) to 
+my GitHub repository.*
+
+
+
+
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.

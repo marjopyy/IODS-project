@@ -1,5 +1,6 @@
 ---
 title: "IODS course project"
+author: "Marjo Pyy-Martikainen"
 output:
   html_document:
     theme: cosmo
