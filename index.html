@@ -497,7 +497,7 @@ p</code></pre>
 </div>
 <div id="a-linear-regression-model-for-exam-points" class="section level2">
 <h2>A linear regression model for exam points</h2>
-<p>We fit a linear regression model for exam points with three explanatory variables. The explanatory variables, <em>Attitude</em>, <em>stra</em>, and <em>surf</em>, are chosen by looking at the correlations of variable points with other variables.</p>
+<p>I fit a linear regression model for exam points with three explanatory variables. The explanatory variables, <em>Attitude</em>, <em>stra</em>, and <em>surf</em>, are chosen by looking at the correlations of variable points with other variables.</p>
 <p>The estimated parameters of the model are shown below. The intercept (11.0171) shows the estimated exam points when explanatory variables are set to zero. According to the model, a one-point increase in general attitude towards statistics increases the expected exam points by 3.3952. The estimated effect is highly significant (p-value &lt; 0.001). This means that under the null hypothesis of no effect (<span class="math inline">\(\beta=0\)</span>), it is extremely unlikely to get an estimate of <span class="math inline">\(\beta\)</span> of size 3.3952. Neither of the other explanatory variables is statistically significant.</p>
 <pre class="r"><code>model_1 &lt;- lm(Points ~ Attitude + stra + surf, data = learning2014)
 summary(model_1)</code></pre>
@@ -544,9 +544,6 @@ summary(model_1)</code></pre>
 ## Residual standard error: 5.296 on 162 degrees of freedom
 ## Multiple R-squared:  0.2074, Adjusted R-squared:  0.1927 
 ## F-statistic: 14.13 on 3 and 162 DF,  p-value: 3.156e-08</code></pre>
-</div>
-<div id="model-diagnostics" class="section level2">
-<h2>Model diagnostics</h2>
 <p>As the effect of variable <em>stra</em> is still not statistically significant, I end up with a model with variable <em>Attitude</em> as the only explanatory variable.</p>
 <p>In the model below, the estimated effect of a one-point increase in variable <em>Attitude</em> is to increase the exam points by <span class="math inline">\(3.5255\)</span>. The estimated effect if highly significant (p-value &lt; 0.001). However, the R-squared is only 0.1906, which means that the explanatory power of the model is low. The variable <em>Attitude</em> only explains 19.06 % of the variation in the variable exam points. The better the model fits the data, the closer the R-squared is to one.</p>
 <pre class="r"><code>model_3 &lt;- lm(Points ~ Attitude, data = learning2014)
@@ -571,6 +568,9 @@ summary(model_1)</code></pre>
 ## Residual standard error: 5.296 on 162 degrees of freedom
 ## Multiple R-squared:  0.2074, Adjusted R-squared:  0.1927 
 ## F-statistic: 14.13 on 3 and 162 DF,  p-value: 3.156e-08</code></pre>
+</div>
+<div id="model-diagnostics" class="section level2">
+<h2>Model diagnostics</h2>
 <p>As a final step of the analysis, I draw some diagnostic plots. A linear regression model assumes that the model errors are normally distributed, with mean zero and a constant variance. The following three plots help to evaluate the validity of these assumptions.</p>
 <p>The plot of residuals versus fitted values can be used to inspect the assumptions of zero mean and constant variance. The residuals are scattered around zero and their spread does not depend on the fitted values. With fitted values of 24 or larger, there are some large negative residuals, though.</p>
 <p>The normal Q-Q plot shows whether the assumption of normality is met. In case the residuals are normally distributed, they should lie on a straight line in the Q-Q plot. This is approximately the case, except some deviations at the both ends of the distribution.</p>

@@ -56,7 +56,7 @@ p
 
 ## A linear regression model for exam points
 
-We fit a linear regression model for exam points with three explanatory variables. The explanatory variables, *Attitude*, *stra*, and *surf*,  are chosen by looking at the correlations of variable points with other variables.   
+I fit a linear regression model for exam points with three explanatory variables. The explanatory variables, *Attitude*, *stra*, and *surf*,  are chosen by looking at the correlations of variable points with other variables.   
 
 The estimated parameters of the model are shown below. The intercept (11.0171) shows the estimated exam points when explanatory variables are set to zero. 
 According to the model, a one-point increase in general attitude towards statistics increases the expected exam points by 3.3952. The estimated effect is highly significant (p-value < 0.001). This means that under the null hypothesis of no effect ($\beta=0$), it is extremely unlikely to get an estimate of $\beta$ of size 3.3952. Neither of the other explanatory variables is statistically significant.
@@ -76,7 +76,7 @@ summary(model_1)
 ```
 
 
-## Model diagnostics
+
 
 As the effect of variable *stra* is still not statistically significant, I end up with a model with variable *Attitude* as the only explanatory variable.
 
@@ -89,6 +89,8 @@ model_3 <- lm(Points ~ Attitude, data = learning2014)
 summary(model_1)
 
 ```
+
+## Model diagnostics
 
 As a final step of the analysis, I draw some diagnostic plots. A linear regression model assumes that the model errors are normally distributed, with mean zero and a constant variance. The following three plots help to evaluate the validity of these assumptions. 
 
