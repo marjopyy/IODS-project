@@ -1,7 +1,7 @@
 
 # About the project
 
-*I heard about IODS from Kimmo's Facebook posting. I have recently started learning to use Rstudio and GitHub at Kela and this seemed like a perfect course to deepen my knowledge. 
+I heard about IODS from Kimmo's Facebook posting. I have recently started learning to use Rstudio and GitHub at Kela and this seemed like a perfect course to deepen my knowledge. 
 **Feeling very excited about this course!** 
 Here is a [link](github.com/marjopyy/IODS-project) to 
 my GitHub repository.*
@@ -10,11 +10,4 @@ my GitHub repository.*
 
 
 
-```{r}
-# This is a so-called "R chunk" where you can write R code.
-
-date()
-
-```
-The text continues here.
 

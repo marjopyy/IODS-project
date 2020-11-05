@@ -44,3 +44,6 @@ write.csv(learn14,"./data/learning2014.csv",row.names=F)
 test_data <- read.csv("./data/learning2014.csv")
 str(test_data)
 head(test_data)
+
+
+

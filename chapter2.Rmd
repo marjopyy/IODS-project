@@ -1,13 +1,108 @@
-# Insert chapter 2 title here
+# Exercise 2: Linear regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+## The data 
+
+The original data set was downloaded from <http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt>.
+It contains results from a survey of students' attitudes towards
+learning statistics. The data was collected among students attending the course
+*Introduction to Social Statistics* during fall 2014. 
+
+The analysis data contains students' exam points, age and gender, and four
+variables summarising the attitude questions. Variable *Attitude* is based on 10 questions and it measures students' global attitude towards statistics. Variables *deep*, *stra* and *surf* are averages over 
+deep, strategic and surface questions, respectively (for more information, see
+<https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt >)
+After excluding students whose 
+exam points were equal to zero, the analysis data contains information
+on 166 students.
 
 ```{r}
-date()
+#read the data into R
+learning2014 <- read.csv("./data/learning2014.csv")
+#dimensions of the data
+dim(learning2014)
+#variable types
+str(learning2014)
+
 ```
 
-Here we go again...
+## Distribution of variables and their pairwise associations
+
+The figure below shows that the majority of students are female. Comparing female students with male students,
+female students' general attitude towards statistics is more negative.  
+For males, the distribution of exam points is slightly more skewed towards high points. 
+The median for the combined variable *deep* measuring a thrive towards a thorough understanding is higher for males, whereas females have a higher median for the combined variable *stra*, which is a measure of a systematic approach to studying. The combined variable *surf* measures a lack of motivation and it has a higher median among females.
+
+Looking at the correlations between variables, we see that exam points and the general attitude towards statistics are strongly positively correlated. The largest negative correlation can be found between variables *deep* and *surf*. 
+
+
+```{r echo=F}
+
+# Access the libraries needed for visualization of data
+library(GGally)
+library(ggplot2)
+```
+
+```{r message=F}
+# transform gender as factor for plotting
+learning2014$gender <- as.factor(learning2014$gender)
+# scale attitude by 10 to make it comparable with other explanatory variables
+learning2014$Attitude <- learning2014$Attitude/10
+
+p <- ggpairs(learning2014, mapping = aes(col=gender,alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)), upper = list(continuous = wrap("cor", size = 2.5)))
+p
+
+```
+
+## A linear regression model for exam points
+
+We fit a linear regression model for exam points with three explanatory variables. The explanatory variables, *Attitude*, *stra*, and *surf*,  are chosen by looking at the correlations of variable points with other variables.   
+
+The estimated parameters of the model are shown below. The intercept (11.0171) shows the estimated exam points when explanatory variables are set to zero. 
+According to the model, a one-point increase in general attitude towards statistics increases the expected exam points by 3.3952. The estimated effect is highly significant (p-value < 0.001). This means that under the null hypothesis of no effect ($\beta=0$), it is extremely unlikely to get an estimate of $\beta$ of size 3.3952. Neither of the other explanatory variables is statistically significant.
+
+```{r}
+model_1 <- lm(Points ~ Attitude + stra + surf, data = learning2014)
+summary(model_1)
+
+```
+I drop variable surf from the model (because it has a higher p-value than stra) and estimate the model again: 
+
+
+```{r}
+model_2 <- lm(Points ~ Attitude + stra, data = learning2014)
+summary(model_1)
+
+```
+
+
+## Model diagnostics
+
+As the effect of variable *stra* is still not statistically significant, I end up with a model with variable *Attitude* as the only explanatory variable.
+
+In the model below, the estimated effect of a one-point increase in variable 
+*Attitude* is to increase the exam points by $3.5255$. The estimated effect if highly significant (p-value < 0.001). However, the R-squared is only 0.1906, which means that the explanatory power of the model is low. The variable *Attitude* only explains 19.06 % of the variation in the variable exam points. The better the model fits the data, the closer the R-squared is to one. 
+
+
+```{r}
+model_3 <- lm(Points ~ Attitude, data = learning2014)
+summary(model_1)
+
+```
+
+As a final step of the analysis, I draw some diagnostic plots. A linear regression model assumes that the model errors are normally distributed, with mean zero and a constant variance. The following three plots help to evaluate the validity of these assumptions. 
+
+The plot of residuals versus fitted values can be used to inspect the assumptions of zero mean and constant variance. The residuals are scattered around zero and their spread does not depend on the fitted values. With fitted values of 24 or larger, there are some large negative residuals, though. 
+
+The normal Q-Q plot shows whether the assumption of normality is met. 
+In case the residuals are normally distributed, they should lie on a straight line in the Q-Q plot. This is approximately the case, except some deviations at the both ends of the distribution. 
+
+The leverage plot helps to evaluate individual observations' influnce on the model. The Cook's distances on the x axis should not be "too large". It has been suggested (see for example <https://en.wikipedia.org/wiki/Cook%27s_distance>) that values greater than one can intrepreted as influential observations.
+There seems to be no observations having an excessively large influence on the model fit. As a conclusion, the model assumptions seem to be reasonably well met.
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(model_3,which=c(1,2,5))
+```
+
