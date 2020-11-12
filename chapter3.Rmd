@@ -1,0 +1,160 @@
+# Exercise 3: Logistic regression
+
+
+## The data 
+
+The original data set was downloaded from <https://archive.ics.uci.edu/ml/datasets/Student+Performance>.
+The data measures student achievement in secondary education of two Portuguese schools.Two datasets are provided regarding the performance in two distinct subjects: Mathematics (math) and Portuguese language (por). 
+
+The analysis data was created by combining the two datasets. because there are no common identifiers in the data sets, they were combined by using 27 background variables (sex, age, address etc.). For numerical variables absences (number of school absences), failures (number of oast class failures), G1 (first period grade), G2 (second period grade) and G3 (final grade),
+the mean of the two values (math and portuguese) was calculated.  The combined data set has 370 observations.  
+
+
+```{r}
+#read the data into R
+alc <- read.csv("./data/pormath.csv")
+#dimensions of the data
+dim(alc)
+#variable names
+colnames(alc)
+
+```
+
+
+## What explains high alcohol consumption -preliminary analysis
+
+The variable high_use is of key interest in the analysis. It is a binary variable measuring the extent of alcohol consumption (high/low).
+I assume the following four variables may be associated with high alcohol consumption:
+sex, famrel (quality of family relationships), absences (number of school absences)
+and G3 (average final grade from math and portuguese). I assume being a male, having poor family relationships,
+lots of absences from school and a low final average grade are associated with high alcohol consumption.
+
+The bar plots below show the distributions of the variables. 
+
+```{r message=F}
+# Access the libraries needed 
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r message=F}
+# keep only variables of interest
+alc <- alc %>% select(high_use,sex,famrel,absences,G3)
+
+# and draw a bar plot of each variable
+gather(alc) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar()
+```
+
+Looking at the distribution of alcohol consumption by sex, we see that high consumption is more common among males than females.
+
+
+```{r}
+# initialize a plot of high_use by sex
+g <- ggplot(data = alc,aes(x = high_use, fill=sex))
+# draw a bar plot of high_use by sex
+g + geom_bar() + facet_wrap("sex")
+
+
+```
+
+
+I derive a binary variable goodrel from famrel and look at its association with high alcohol consumption. The bar plot below shows that students having good family relationships are less likely to be heavy consumers of alcohol.
+
+```{r}
+# derive a binary variable goodrel from famrel
+alc <- alc %>% mutate(goodrel=famrel>3)
+# initialize a plot of high_use by good family relationships
+g <- ggplot(data = alc,aes(x = high_use, fill=goodrel))
+# draw a bar plot of high_use by goodrel
+g + geom_bar() + facet_wrap("goodrel")
+
+
+```
+
+
+
+The Box plots show the associations between the continuous variables grade and absences 
+with alcohol consumption, drawn separately for females and males. For males, high alcohol consumption is associated with lower grades, while there seems to be no association for females. Males with a high alcohol consumption have a few outlying observations at the low end of variable grade. 
+
+Similarly, for males, high alcohol consumption is associated with more absences, whereas for females, no association is present. Females tend to have a more upwards skewed distribution of absences, both among high and low consumers of alcohol.
+
+
+
+```{r message=F}
+# initialize a plot of high_use and G3, grouping by sex
+g1 <- ggplot(alc, aes(x = high_use, y = G3,col=sex))
+
+# define the plot as a boxplot and draw it
+g1 + geom_boxplot() + ylab("grade") +
+ggtitle("Student grades by alcohol consumption and sex")
+```
+
+```{r message=F}
+# initialize a plot of high_use and absences, grouping by sex
+g1 <- ggplot(alc, aes(x = high_use, y = absences,col=sex))
+
+# define the plot as a boxplot and draw it
+g1 + geom_boxplot() + ylab("absences") +
+ggtitle("Student absences by alcohol consumption and sex")
+
+```
+
+
+
+## A logistic regression model for high alcohol consumption
+
+I fit a logistic regression model for high_use with four explanatory variables:
+sex, goodrel, absences and G3.  
+
+The estimated parameters of the model are shown below. All the explanatory variables are
+statistically significant. For interpretation, we look at the odds ratios.
+Males are almost 3 times more likely to be heavy consumers of alcohol than females
+(OR=2.92).
+Good family relationships also have a strong influence: students having good family 
+relationships are only half as likely heavy alcohol consumers compared to students with bad family relationships (OR=0.55). One additional absence from school increases the likelihood of heavy alcohol consumption by 9 percent (OR=1.09) whereas a one-point increase in average final grade decreases the likelihood by 7 percent (OR=0.93).
+the direction of all these associations are as hypothesized. 
+
+
+```{r message=F}
+m <- glm(high_use ~ sex + goodrel + absences + G3, data = alc, family = "binomial")
+
+# print out a summary of the model
+summary(m)
+
+# compute odds ratios (OR)
+OR <- coef(m) %>% exp
+
+# compute confidence intervals (CI)
+CI <- m %>% confint %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+
+
+```
+
+## Model validation
+
+As a final step, I conduct a simple model validation by tabulating the actual outcomes
+versus model predictions. The proportion of incorrectly predicted students is
+almost 26 percent (21.89 + 4.05). Thus, I would next search for additional explanatory variables!
+
+
+
+```{r}
+# predict() the probability of high_use
+probabilities <- predict(m, type = "response")
+
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability>0.5)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins()
+
+
+```
+
+
