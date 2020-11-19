@@ -1,0 +1,286 @@
+# Exercise 4: Clustering and classification
+
+
+## The data 
+
+The data set used in this exercise contains information on census tracts in
+the Boston metropolitan area. The data was originally published in a paper by 
+[Harrison and Rubinfeld (1978)](www.researchgate.net/publication/4974606_Hedonic_housing_prices_and_the_demand_for_clean_air) where it was used to model housing prices.  
+
+
+```{r message=F}
+# access the MASS package
+library(MASS)
+# load the data
+data("Boston")
+```
+
+The data has 506 census tracts and 14 variables.
+
+```{r}
+# dimensions of data
+dim(Boston)
+
+```
+
+The variables describe median value of houses (medv), average number of rooms (rm), proportion of houses built prior to 1940 (age), neighborhood (black,lstat, crim, zn, indus, tax, ptratio, chas), accessibility (dis, rad) and air pollution (nox, part). More details can be found 
+[here](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html).
+
+```{r}
+# variables
+colnames(Boston)
+```
+
+
+
+
+## Distributions of variables and their pairwise associations
+
+I first look at the distributions of variables.
+Apart from binary variable chas (1=tract bounds Charles river), the variables are continuous. 
+
+```{r}
+
+summary(Boston)
+
+```
+
+```{r message=F}
+
+# Access the libraries needed for visualization of data
+library(GGally)
+library(ggplot2)
+
+```
+
+The plot below shows that most of the variables are not normally distributed. Many of the distributions are heavily skewed (crim, zn, black, age, dis, lstat) and some two-peaked (indus, tax).  
+
+The correlation coefficients between variables are generally high, but the graphs show that in many cases the correlations are rather spurious. Looking at the graphs, a few clear associations between variables are present: a high average number of rooms in dwellings (rm) is associated with a small proportion of population with lower status (lstat) and with a high median value of homes (medv).
+
+A high level of air pollution (nox) is associated with a high proportion of houses built prior to 1940 and with a small distance to 5 Boston employment centers. As for variable crime which is the clustering variable in the analysis following, a high crime rate is associated with low
+proportion of residential land zoned for large lots, high proportion of houses built prior to
+1940, small distance to Boston employment centers and low value of homes. 
+
+
+```{r message=F}
+
+library(tidyverse)
+# drop variable chas
+# Boston <- dplyr::select(Boston, -chas) 
+
+# plot distributions and correlations of continuous variables 
+p <- Boston %>% 
+  ggpairs(
+    mapping = aes(alpha=0.5), 
+    lower = list(continuous = wrap("points", colour = "cornflower blue", size=0.3)), 
+    upper = list(continuous = wrap("cor", size = 2)),
+    diag = list(continuous = wrap("densityDiag", colour = "cornflower blue"))) +
+ theme(axis.text.x = element_text(size=5), 
+       axis.text.y = element_text(size=5))  
+p
+
+
+
+```
+
+For later use, I scale the variables so that their mean equals zero and standard deviation equals one.
+The table below shows that the means of scaled variables indeed equal zero.
+The standard deviations are not printed. The scaling does not affect the shape of the distributions of variables (scaled distributions not shown).  
+
+
+```{r}
+# center and standardize variables
+boston_scaled <- scale(Boston)
+# change the object to data frame
+boston_scaled <- as.data.frame(boston_scaled)
+# summaries of the scaled variables
+summary(boston_scaled,digits=2)
+
+```
+Next, I create a categorical variable crime by using quartiles of variable crim as cut points. Variable crime has thus 4 classes labelled by: low, med_low, med_high and high.
+
+```{r}
+# create a quantile vector of crim and print it
+bins <- quantile(boston_scaled$crim)
+bins
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE,label=c("low","med_low","med_high","high"))
+
+# look at the table of the new factor crime
+table(crime)
+
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+```
+
+For model validation purposes, the data is randomly divided into train and test sets.
+The train set (80% of observations) will be used to estimate the model and the test set (20% of observations) to validate the model. 
+
+```{r}
+# number of rows in the Boston dataset 
+n <- nrow(boston_scaled)
+
+# choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+
+```
+
+
+## Linear discriminant analysis
+
+Next I estimate a linear discriminant model with crime as the target variable.
+The purpose of the analysis is to identify those variables that explain
+whether a tract has a high or low crime rate. We have here a four-class
+grouping of crime rate.
+
+A linear discriminant model assumes that explanatory variables are continuous and normally distributed given the classes defined by the target variable. Moreover, a constant variance across the explanatory variables is assumed. According to the preliminary analysis, the assumption of normality is not satisfied. 
+I do not check whether the assumption is satisfied given the crime class but simply assume normality. The constant variance assumption is satisfied because of scaling. 
+
+The results from linear discriminant analysis are shown below. The prior probabilities show the proportions of observations belonging to the four groups in the train data.
+They are not exactly equal because the grouping was done with all the 506 tracts. The variable means differ across crime groups suggesting that they
+have an association with the crime rate.
+
+```{r}
+
+# linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = train)
+
+# print the lda.fit object
+lda.fit
+```
+
+The LDA biplot based on the estimated model is shown below. The observations are colored on the basis of their crime group. The arrows indicate that variable rad (index of accessibility to radial highways) is a strong predictor of high crime rate, variable nox (air pollution) explains medium to high crime rate and  variable zn (prop. of residential land zoned for large lots) explains low crime  
+rate.
+
+```{r}
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col=classes,pch=classes)
+
+lda.arrows(lda.fit, myscale = 2)
+
+```
+
+
+## Model validation
+
+I use the test data to validate the model, ie. to see whether the observations in the test data are correctly classified.
+
+```{r}
+
+# save the correct classes from test data
+correct_classes <- test$crime
+
+# remove the crime variable from test data
+test <- dplyr::select(test, -crime)
+
+```
+
+The table below shows (after a little calculation) that roughly 1/3 of observations lie outside the diagonal i.e. are incorrectly predicted by the model.
+
+```{r}
+# predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+
+# cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class) %>% prop.table 
+
+```
+## K-means clustering
+
+As a final step, I run a K-means clustering analysis with Boston data set.
+K-means clustering divides observations into pre-defined number of clusters (K), by minimizing
+the distance of observations to cluster means (centroids). 
+I first look at the distances between observations, using a popular distance measure, Euclidean distance.
+
+```{r}
+# load MASS and Boston
+library(MASS)
+data('Boston')
+
+# remove variable chas 
+#Boston <- Boston %>% select(-chas)
+
+# center and standardize variables
+boston_scaled <- scale(Boston)
+
+# change the object to data frame
+boston_scaled <- as.data.frame(boston_scaled)
+
+# euclidean distance matrix
+dist_eu <- dist(boston_scaled)
+
+# look at the summary of the distances
+summary(dist_eu)
+```
+
+I first choose three clusters (K=3). The plot below suggests that variables black, zn, tax and rad have a strong association with clusters. Many of the other variables seem to have a somewhat weaker effect, too. 
+
+```{r}
+# k-means clustering
+km <-kmeans(Boston, centers = 3)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled[1:7], col = km$cluster)
+pairs(boston_scaled[8:14], col = km$cluster)
+
+```
+
+I search for optimal number of clusters K by inspecting how the total of within cluster sum of squares
+(total WCSS) changes when K changes. I let K run from 1 to 10. The optimal number of clusters is 
+the value  of K where the total WCSS drops rapidly. 
+
+The plot below shows that the optimal number of clusters is 2.
+
+```{r}
+set.seed(123)
+
+# determine the number of clusters
+k_max <- 10
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(boston_scaled, k)$tot.withinss})
+
+# visualize the results
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+
+```
+
+I choose K=2 and re-run the K-means clustering algoritm. 
+The plot below gives support to dividing this data set to two clusters.
+
+```{r}
+
+# k-means clustering
+km <-kmeans(boston_scaled, centers = 2)
+
+# plot the Boston dataset with 2 clusters
+pairs(boston_scaled[1:6], col = km$cluster)
+pairs(boston_scaled[7:14], col = km$cluster)
+
+
+```
+
+
