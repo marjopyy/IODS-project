@@ -66,7 +66,8 @@ proportion of residential land zoned for large lots, high proportion of houses b
 
 library(tidyverse)
 # drop variable chas
-# Boston <- dplyr::select(Boston, -chas) 
+#Boston <- dplyr::select(Boston, -chas) 
+
 
 # plot distributions and correlations of continuous variables 
 p <- Boston %>% 
@@ -221,7 +222,7 @@ library(MASS)
 data('Boston')
 
 # remove variable chas 
-#Boston <- Boston %>% select(-chas)
+#Boston <- Boston %>% dplyr::select(-chas)
 
 # center and standardize variables
 boston_scaled <- scale(Boston)
