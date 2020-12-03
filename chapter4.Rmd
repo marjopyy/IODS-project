@@ -62,7 +62,7 @@ proportion of residential land zoned for large lots, high proportion of houses b
 1940, small distance to Boston employment centers and low value of homes. 
 
 
-```{r message=F}
+```{r message=F, fig.width=8}
 
 library(tidyverse)
 # drop variable chas
@@ -163,7 +163,7 @@ lda.fit
 The LDA biplot based on the estimated model is shown below. The observations are colored on the basis of their crime group. The arrows indicate that variable rad (index of accessibility to radial highways) is a strong predictor of high crime rate, variable nox (air pollution) explains medium to high crime rate and  variable zn (prop. of residential land zoned for large lots) explains low crime  
 rate.
 
-```{r}
+```{r fig.width=8}
 # the function for lda biplot arrows
 lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
   heads <- coef(x)
@@ -239,7 +239,7 @@ summary(dist_eu)
 
 I first choose three clusters (K=3). The plot below suggests that variables black, zn, tax and rad have a strong association with clusters. Many of the other variables seem to have a somewhat weaker effect, too. 
 
-```{r}
+```{r fig.width=8}
 # k-means clustering
 km <-kmeans(Boston, centers = 3)
 
@@ -272,7 +272,7 @@ qplot(x = 1:k_max, y = twcss, geom = 'line')
 I choose K=2 and re-run the K-means clustering algoritm. 
 The plot below gives support to dividing this data set to two clusters.
 
-```{r}
+```{r fig.width=8}
 
 # k-means clustering
 km <-kmeans(boston_scaled, centers = 2)

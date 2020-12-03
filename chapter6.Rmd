@@ -1,0 +1,320 @@
+# Exercise 6: Analysis of longitudinal data
+
+
+
+## The data sets 
+
+In this exercise, two different data sets consisting of repeated measurements will be used.
+
+The first data, RATS, is from a nutrition study conducted on rats. The data contains repeated measurements on 16 rats that were divided into 3 groups, each group having a different diet.
+The weights of rats were measured weekly over a nine week period (two measurements at week 7). I use the long form of data, where the measurements are gathered into the variable 
+Weight. The data consists of 176 observations (16*11) and 5 variables.
+
+
+```{r message=F}
+# load packages needed
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+load(file = "./data/RATSL.Rdata")
+dim(RATSL)
+names(RATSL)
+str(RATSL)
+```
+
+The second data, BPRS, contains repeated measurements on 40 males that were randomly assigned to two treatment groups. Each male was rated using a Brief Psychiatric Rating Scale once before treatment and after treatment, 8 times at one-week intervals. The BPRS scale is used
+to evaluate patients suspected of having schizophrenia. I use the long form of the data,
+where each measurement for each male is in its own row. The data contains 360 rows (40*9) and 6 variables.
+An ID variable that serves as a unique identifier was added in the data earlier.
+
+```{r}
+load(file = "./data/BPRSL.Rdata")
+dim(BPRSL)
+names(BPRSL)
+str(BPRSL)
+```
+
+
+
+## Graphical displays and summary measure approach
+
+### Weight growth profiles of individual rats
+
+I first draw a line graph showing how each rat's weight changes over time. The graph
+below shows that the rats were probably assigned to different diets on the basis of their weight
+(or some other feature strongly correlated with weight). Rats in group 1 have the smallest weight and rats is group 3 have the largest weight - apart from the heaviest rat who belongs to group 2. The order of the groups w.r.t. weight does not change over time.
+
+
+```{r}
+# Plot the RATSL data
+ggplot(RATSL, aes(x = Time, y = Weight, group = ID)) +
+  geom_line(aes(color=Group)) +
+# facet_grid(. ~ Group, labeller = label_both) +
+# no need for faceting with this data as the groups do not overlap
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10)) +
+  scale_y_continuous(name = "Weight (grams)") +
+  theme(legend.position = "top")
+
+```
+
+Let's look how scaling affects the plot
+
+```{r }
+
+RATSLS <- RATSL %>%
+  group_by(Time) %>%
+  mutate(stdWeight = (Weight-mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+# Plot again with the standardised Weight
+ggplot(RATSLS, aes(x = Time, y = stdWeight, group = ID)) +
+  geom_line(aes(color=Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10)) +
+  scale_y_continuous(name = "Weight (grams)") +
+  theme(legend.position = "top")
+
+```
+
+
+Scaling does not give any additional information as the tracking can be seen very clearly 
+already from the graph based on unscaled data.
+
+### Mean weight profiles of rats 
+
+
+Another way to graph longitudinal data is to plot some summary statistic for each
+measurement point. This may be helpful especially with large data sets containing many
+individuals. The RATS data only contains 16 rats but nevertheless, I plot the mean weights and their standard errors by diet group for each measurement point. The graph below confirms what could already be seen from individual weight profiles: The mean weights of rats in the three groups differ and the difference persists over time. 
+
+Looking at the slopes of the lines, it seems that the weight change is largest in group 2 and smallest in group 1. To shed some additional light
+to this issue, I calculate another summary measure.
+
+```{r message=F}
+# Number of weeks, baseline (week 0) included
+n <- RATSL$Time %>% unique() %>% length()
+
+# Summary data with mean and standard error of Weight by Group and Time 
+RATSS <- RATSL %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = sd(Weight)/sqrt(n)) %>%
+  ungroup()
+
+
+# Plot the mean profiles
+ggplot(RATSS, aes(x = Time, y = mean, linetype=Group, shape = Group)) +
+  geom_line() +
+ scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=2) +
+  scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=1) +
+  theme(legend.position = "top") +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+
+```
+
+### Summary measure analysis  
+
+I next calculate a simple summary measure aiming to describe the differences in weight growth between the diet groups. I use as a summary measure the difference between the last and the first weight measurements. 
+
+The box plot below shows that the differences in weight change is quite clear between groups. Group 2 seems to have an oulier whose weight change is exceptionally low. I remove this observation and draw the box plot again.
+
+```{r}
+# day of first measurement
+first <- min(RATSL$Time) 
+# day of last measurement
+last <- max(RATSL$Time) 
+
+# calculate for each rat the difference between last and first measurement
+RATSLF <- RATSL %>% filter(Time==first) %>% rename(firstWeight=Weight) %>% dplyr::select(ID,Group,firstWeight)
+RATSLL <- RATSL %>% filter(Time==last) %>% rename(lastWeight=Weight) %>%
+dplyr::select(ID,Group,lastWeight)
+
+RATSLFL <- inner_join(RATSLF,RATSLL,by=c("ID","Group")) %>%
+  mutate(WeightGain=lastWeight-firstWeight)
+
+# draw a boxplot of weight gain by Group
+ggplot(RATSLFL, aes(x = Group, y = WeightGain)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23,  size=4, fill = "white") +
+  scale_y_continuous(name = "Weight gain between first and last measurement")
+
+```
+```{r}
+# remove the outlier
+RATSLFL1 <- RATSLFL %>% filter(!(Group==2 & WeightGain < 30)) 
+
+# and draw the boxplot again
+ggplot(RATSLFL1, aes(x = Group, y = WeightGain)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23,  size=4, fill = "white") +
+  scale_y_continuous(name = "Weight gain between first and last measurement")
+
+```
+
+As expected, the differences between groups are larger after removing the outlier.
+As a last step in analyzing RATS data, I conduct an analysis of variance (ANOVA) to formally test for group differences. I include the first weight measurement in the analysis to account for its correlation with weight gain. 
+
+```{r}
+# Fit the linear model with the mean as the response 
+fit <- lm(WeightGain ~ firstWeight + Group, data = RATSLFL1)
+
+# Compute the analysis of variance table for the fitted model 
+anova(fit)
+
+```
+
+The ANOVA results show that the group differences in weight gain are highly significant
+(with risk of falsely assuming a group difference 0.007), even after accounting for differences in rats' weights at first measurement. Thus, according to these preliminary analyses, the diet seems to have a statistically significant effect of rats' weight growth. 
+
+## Linear mixed effects models
+
+I practise using linear mixed effects models with BPRS data. Before
+starting to specify models, I draw a graph showing individual bprs measurements in the two treatment groups. Looking at the graph, it seems that there is little difference in the individual bprs trajectories between the two groups. 
+
+It is better to study the treatment effects more formally by constructing a model that explains bprs rating.  
+
+```{r fig.width=10, fig.height=6}
+
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  scale_y_continuous(name = "bprs") +
+    theme(legend.position = "bottom")
+
+```
+
+
+### A simple linear model 
+
+Repeated measurement data consists of several measurements per individual that are highly likely to be correlated due to unobserved individual-specific features.
+
+
+Even though a simple linear regression model assumes independency of  observations and  is therefore inappropriate for repeated measurement data, I shall start my modeling exercise with it.
+
+As can be seen below, the treatment group has no statistically significant effect on bprs score. Each additional week decreases the bprs score by 2.2 points. The effect is highly significant. The pre-treatment bprs score is also a highly significant predictor of post-treatment score. Let's see how the model estimates change when I allow the measurements by the same individual be correlated.
+
+
+
+```{r}
+
+# baseline = pre treatment  bprs measurement
+BPRSLW0 <- BPRSL %>% filter(week==0) %>% rename(baseline=bprs) %>% dplyr::select(subject,treatment,baseline)
+
+# post treatment measurements
+BPRSLW18 <- BPRSL %>% filter(!week==0)
+
+# combine baseline measurement with post treatment measurements
+BPRSLB <- left_join(BPRSLW18,BPRSLW0, by=(c("subject","treatment")))
+
+# a linear regression model 
+BPRS_reg1 <- lm(bprs ~ baseline + week + treatment, BPRSLB)
+
+# print out a summary of the model
+summary(BPRS_reg1)
+```
+
+
+### A random intercept linear model
+
+The random intercept model adds an individual-specific, time-constant error term in the model. It can be interpreted as unobserved features of the individual that do not change over time. The error terms of individuals are assumed to be normally distributed with zero mean and constant variance. The individual-specific error term allows individuals to have
+their own intercept of the model. The slope coefficients are the same across individuals.
+
+Compared to the simple linear regression model with independence assumption, there are no changes in the estimated effects of covariates. The standard errors of treatment effect and baseline weight are now about twice as large because of a smaller effective sample size
+(due to correlated observations). The standard error of time is now *smaller*, which results from a smaller model error due to taking the within-subject dependency
+in time into account. 
+
+The variance of individual-specific random effects is larger that the residual variance.
+It seems that there is important variation in the regression line intercepts between individuals.
+
+
+```{r message=F}
+# access library lme4
+library(lme4)
+
+# a random intercept model
+BPRS_reg2 <- lmer(bprs ~ baseline + week + treatment + (1 | ID), data = BPRSLB, REML = FALSE)
+
+# Print the summary of the model
+summary(BPRS_reg2)
+
+```
+## A random intercept and slope linear model
+
+Next I estimate  a model that allows variation not only in the intercepts but also in the slopes of different individuals. 
+
+The effects of baseline weight and treatment are now larger. The treatment effect is still
+not statistically significant. The effect of time (week) is the same, but the standard error is larger. The variance of the random terms related to the slope of the regression line is small,
+suggesting that the individual-specific variation in the slopes may not be large. However,
+according to the likelihood ratio test, the model with both random intercept and slope fits the data better.
+
+```{r}
+# a random intercept and random slope model
+BPRS_reg3 <- lmer(bprs ~ baseline + week + treatment + (week | ID), data = BPRSLB, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_reg3)
+
+
+# perform an ANOVA test on the two random effect models
+anova(BPRS_reg3, BPRS_reg2)
+
+```
+
+## A random intercept and slope model with interaction between time and treatment
+
+As a last step, I estimate a model with a random intercept, random slope and interaction between time (variable week) and treatment. The interaction lets the effect of time differ between the 
+treatment groups.
+
+Interestingly, the results show that there is a statistically significant difference in
+the effect of time between the treatment groups. The likelihood ratio test favors the model with the interaction term (p-value 0.05). Thus I choose this model and draw the model fits 
+for individuals.
+
+```{r}
+# a random intercept and random slope model with interaction btwn week and treatment
+BPRS_reg4 <- lmer(bprs ~ baseline + week + treatment + week*treatment + (week | ID), data = BPRSLB, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_reg4)
+
+
+# perform an ANOVA test 
+anova(BPRS_reg4, BPRS_reg3)
+
+```
+In the graph below, the left panel shows the observed post-treatment bprs scores and the right panel
+shows the fitted post-treatment bprs scores. It looks like the model depicts the observed patterns rather well.
+
+```{r message=F, fig.width=10, fig.height=4}
+# load package needed to combine two ggplots on one page
+library(ggpubr)
+
+# draw the plot of BPRSLB with the observed bprs values
+p1 <- ggplot(BPRSLB, aes(x = week, y = bprs, group = ID)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week") +
+  scale_y_continuous(name = "bprs score", breaks = seq(0, 100, 20), limits=c(0,100)) +
+  theme(legend.position = "top")
+
+# Create a vector of the fitted values
+Fitted <- fitted(BPRS_reg4)
+
+# Create a new column FittedVal 
+BPRSLB <- BPRSLB %>% mutate(FittedVal=Fitted)
+
+# draw the plot of BPRSLB with the Fitted values of bprs
+p2 <-  ggplot(BPRSLB, aes(x = week, y = FittedVal, group = ID)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week") +
+  scale_y_continuous(name = "bprs score", breaks = seq(0, 100, 20), limits=c(0,100)) +
+  theme(legend.position = "top")
+
+p12 <- ggarrange(p1,p2,ncol=2)
+p12
+              
+
+```
+
+

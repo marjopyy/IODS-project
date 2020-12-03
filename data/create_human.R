@@ -59,6 +59,7 @@ tail(human_cc,n=10) # last 7 rows relate to regions
 lastc=nrow(human_cc)-7
 human_f <- human_cc[1:lastc,]
 
+
 # add country as rownames
 rownames(human_f) <- human_f$country
 

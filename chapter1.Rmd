@@ -1,5 +1,4 @@
 
-# About the project
 
 I heard about IODS from Kimmo's Facebook posting. I have recently started learning to use Rstudio and GitHub at Kela and this seemed like a perfect course to deepen my knowledge. 
 **Feeling very excited about this course!** 
