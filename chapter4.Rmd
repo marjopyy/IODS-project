@@ -62,7 +62,7 @@ proportion of residential land zoned for large lots, high proportion of houses b
 1940, small distance to Boston employment centers and low value of homes. 
 
 
-```{r message=F, fig.width=8}
+```{r message=F, fig.width=8, fig.heigth=6}
 
 library(tidyverse)
 # drop variable chas
