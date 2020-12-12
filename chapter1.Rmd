@@ -1,9 +1,11 @@
 
 
-I heard about IODS from Kimmo's Facebook posting. I have recently started learning to use Rstudio and GitHub at Kela and this seemed like a perfect course to deepen my knowledge. 
-**Feeling very excited about this course!** 
+I heard about this course from Kimmo's Facebook posting. I work as a mathematician at Kela where I have recently started learning to use Rstudio and GitHub. This seemed like a perfect course to deepen my knowledge of these tools. 
+I also boldly hope that this course will give me new career opportunities! 
+**Thus, feeling very excited about this course!** 
+
 Here is a [link](github.com/marjopyy/IODS-project) to 
-my GitHub repository.*
+my GitHub repository.
 
 
 
