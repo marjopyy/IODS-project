@@ -151,6 +151,8 @@ The results from linear discriminant analysis are shown below. The prior probabi
 They are not exactly equal because the grouping was done with all the 506 tracts. The variable means differ across crime groups suggesting that they
 have an association with the crime rate.
 
+The first linear discriminant explains 95% of the variance between the groups based on crime rate. 
+
 ```{r}
 
 # linear discriminant analysis
@@ -160,10 +162,9 @@ lda.fit <- lda(crime ~ ., data = train)
 lda.fit
 ```
 
-The LDA biplot based on the estimated model is shown below. The observations are colored on the basis of their crime group. The arrows indicate that variable rad (index of accessibility to radial highways) is a strong predictor of high crime rate, variable nox (air pollution) explains medium to high crime rate and  variable zn (prop. of residential land zoned for large lots) explains low crime  
-rate.
+The LDA biplot based on the estimated model is shown below. The observations are colored on the basis of their crime group. The arrows indicate that variable rad (index of accessibility to radial highways) is a strong predictor of linear discriminant 1, while variables nox (air pollution) and zn (prop. of residential land zoned for large lots) explain linear discriminant 2. 
 
-```{r fig.width=8}
+```{r fig.width=8, fig.heigth=8}
 # the function for lda biplot arrows
 lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
   heads <- coef(x)
@@ -272,7 +273,7 @@ qplot(x = 1:k_max, y = twcss, geom = 'line')
 I choose K=2 and re-run the K-means clustering algoritm. 
 The plot below gives support to dividing this data set to two clusters.
 
-```{r fig.width=8}
+```{r fig.width=8, fig.heigth=8}
 
 # k-means clustering
 km <-kmeans(boston_scaled, centers = 2)
