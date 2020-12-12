@@ -36,14 +36,14 @@ The median for the combined variable *deep* measuring a thrive towards a thoroug
 Looking at the correlations between variables, we see that exam points and the general attitude towards statistics are strongly positively correlated. The largest negative correlation can be found between variables *deep* and *surf*. 
 
 
-```{r echo=F}
+```{r message=F}
 
 # Access the libraries needed for visualization of data
 library(GGally)
 library(ggplot2)
 ```
 
-```{r message=F}
+```{r message=F, fig.width=8, fig.height=6}
 # transform gender as factor for plotting
 learning2014$gender <- as.factor(learning2014$gender)
 # scale attitude by 10 to make it comparable with other explanatory variables
@@ -81,7 +81,7 @@ summary(model_1)
 As the effect of variable *stra* is still not statistically significant, I end up with a model with variable *Attitude* as the only explanatory variable.
 
 In the model below, the estimated effect of a one-point increase in variable 
-*Attitude* is to increase the exam points by $3.5255$. The estimated effect if highly significant (p-value < 0.001). However, the R-squared is only 0.1906, which means that the explanatory power of the model is low. The variable *Attitude* only explains 19.06 % of the variation in the variable exam points. The better the model fits the data, the closer the R-squared is to one. 
+*Attitude* is to increase the exam points by 3.5. The estimated effect if highly significant (p-value < 0.001). However, the R-squared is only 0.1906, which means that the explanatory power of the model is low. The variable *Attitude* only explains 19.06 % of the variation in the variable exam points. The better the model fits the data, the closer the R-squared is to one. 
 
 
 ```{r}
@@ -103,7 +103,7 @@ The leverage plot helps to evaluate individual observations' influnce on the mod
 There seems to be no observations having an excessively large influence on the model fit. As a conclusion, the model assumptions seem to be reasonably well met.
 
 
-```{r}
+```{r, fig.width=8, fig.height=6}
 par(mfrow=c(2,2))
 plot(model_3,which=c(1,2,5))
 ```
