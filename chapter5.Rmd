@@ -1,0 +1,218 @@
+# Exercise 5: Dimensionality reduction techniques
+
+
+
+## The data 
+
+The data set used in this exercise is gathered by United nations. 
+it contains several indicators for most countries of the
+world. The indicators are related to wealth, health, education and gender equality. 
+The original data was retrieved from 
+[United Nations web pages](http://hdr.undp.org/en/content/human-development-index-hdi).
+
+
+```{r message=F}
+
+# Access the libraries needed for analysis
+library(tidyverse)
+library(GGally)
+library(ggplot2)
+
+```
+
+
+```{r message=F}
+
+# load the wrangled human data
+human<-get(load(file = "./data/human_f_.Rdata"))
+dim(human)
+# 155 countries and 8 variables
+
+```
+
+```{r message=F}
+# calculate summaries of variables
+summary(human)
+cov(human)
+# gni has a high variance!
+
+```
+
+## Variable distributions and their pairwise associations
+
+The graph below shows the distributions and pairwise associations between variables 
+in human data. In the lower part of the plot, pairwise scatter plots of variables 
+and a linear regression fit is shown. The correlation coefficients are shown in the upper part 
+of the graph. Variables leb (life expectancy at birth), mm_ratio (maternal mortality ratio), 
+abr (adolescent birth rate) and educ_exp (expected years of schooling) are strongly correlated with each other, with absolute values of correlation coefficients exceeding 0.7.
+
+```{r message=F, fig.width=8, fig.height=6}
+# plot distributions and correlations of continuous variables 
+p <- human %>% 
+  ggpairs(
+    mapping = aes(alpha=0.5), 
+    lower = list(continuous = wrap("smooth", colour = "cornflower blue", alpha=0.3, size=1)), 
+    upper = list(continuous = wrap("cor", size = 3)),
+    diag = list(continuous = wrap("densityDiag", colour = "cornflower blue"))) +
+ theme(axis.text.x = element_text(size=6), 
+       axis.text.y = element_text(size=6))  
+p
+```
+
+## Principal component analysis
+
+I conduct a principal component analysis (PCA) of human data, first without any scaling of variables. PCA is a dimensionality reduction method for continuous variables that tries
+to capture a maximum amount of variation in a few principal components. The  first principal component captures the largest share of variation, the second principal component captures the second largest share of variation etc. The number of principal components estimated is the same as the number of variables in data. However,
+the first few principal components capture usually most of the variation and are thus of main interest in the analysis. As PCA assumes that variables with large variance are more important than variables with small variance, it is recommendable to scale the variables before running PCA. We however first run a PCA with unscaled data.
+
+The variation in original variables captured by principal components is shown below.
+The first principal component captures 99.99 % of variance so there is not much variation left for the other principal components.  
+
+```{r message=F}
+# perform principal component analysis (PCA)
+pca_human <- prcomp(human)
+
+# save results of PCA
+res <- summary(pca_human)
+
+# the variability of variables/features captured by principal components
+pca_pr <- round(100*res$importance[2, ], digits = 2)
+pca_pr
+
+```
+
+The biplot below shows that variable gni (gross national income per capita)
+has an extremely high correlation with the first principal component, PC1.
+Gni has by far the largest variance among variables and has therefore
+too much influence in the analysis. It is better to scale the variables and rerun the PCA!
+
+```{r warning=F, fig.width=6, fig.height=6}
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human, cex = c(0.6, 1), cex.axis=0.8, col = c("grey20", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2],
+       sub="Biplot, unscaled human data") 
+
+```
+
+As shown below, the scaled variables have mean equal to zero and variance equal to one.
+
+```{r}
+# scale human data
+human_scaled <- scale(human)
+
+# let's look how scaling affects
+summary(human_scaled)
+cov(human_scaled)
+
+```
+The results of PCA are very different after scaling. As can be seen below, the first 
+principal component captures now only 53,6 % of the variation in the variables.
+Let's see how the biplot looks now.
+
+```{r}
+# repeat PCA with scaled data
+pca_human_scaled <- prcomp(human_scaled)
+
+# save results of PCA
+res_scaled <- summary(pca_human_scaled)
+
+
+# the variability of variables/features captured by principal components
+pca_pr_scaled <- round(100*res_scaled$importance[2, ], digits = 2)
+pca_pr_scaled
+
+```
+```{r warning=F, fig.width=6, fig.height=6}
+
+# create object pc_lab to be used as axis labels
+pc_lab_scaled <- paste0(names(pca_pr_scaled), " (", pca_pr_scaled, "%)")
+
+# draw a biplot
+biplot(pca_human_scaled, cex = c(0.6,1), cex.axis=0.8, col = c("grey20", "deeppink2"), xlab = pc_lab_scaled[1], ylab = pc_lab_scaled[2], sub="Biplot, scaled human data") 
+
+```
+
+It seems that variables abr (adolescent birth rate) and mm_ratio (maternal mortality ratio) are highly positively correlated both with each other and with the first principal component,
+PC1. Variables educ_exp (expected years of education), leb (life expectancy at birth), gni (gross national income per capita) and edu2_fm (values exceeding one indicate that females have a higher proportion with at least secondary education compared to males) are highly positively correlated with each other and 
+highly negatively correlated with variables abr and mm_ratio, as well as with PC1. 
+PC2 is highly correlated with variables rpar (Percentage of female representatives in parliament) and lf_fmr (values exceeding one indicate that females have a higher proportion in the labour force compared to males) and the two variables are highly positively correlated with each other. 
+
+To sum up, this data seems to be well described  by two dimensions. The first  principal component seems to be driven by variables related to wealth, health and education, whereas the second principal component is largely driven by variables related to
+gender equality. It is interesting to note that as the principal components are uncorrelated, the results suggest that gender equality is not related to wealth, health and education. For example, Mozambique places itself very nicely in the dimension  of gender equality, while its position in the wealth, health and education dimension is poor. The Nordic countries find themselves at a similar level of gender equality, but with a much more favourable position in the wealth, health and education dimension.
+
+
+## Multiple correspondence analysis
+
+I will next practise multiple correspondence analysis (MCA) with tea consumption data.
+
+```{r}
+# load the FactoMineR package
+library(FactoMineR)
+# load the tea data set
+data("tea")
+
+```
+
+Let's take a look at tea data. The data has 300 observations (an observation correponds to an answer in a survey questionnaire about tea consumption) and 36 variables. Most of the variables are categorical variables. 
+
+```{r}
+# basic information about tea data
+# number of observations and variables
+dim(tea)
+# variable types etc. 
+str(tea)
+```
+For further analysis, we choose the following variables: breakfast,tearoom, How,
+where, price, sex and SPC. Let take a closer look at these variables.
+
+```{r}
+
+tea_time <- tea %>% dplyr::select(tearoom,How,where,how,sex,SPC)
+
+```
+
+The bar plots below show that the majority of respondents drink tea in tea bags and without milk, lemon or other addings. The majority of respondents are female,students or other non-workers and the majority do not drink their tea in a tearoom. The tea is most often bought in a chain store.
+
+```{r message=F}
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") +
+geom_bar() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+Next I run a multiple correspondence analysis (MCA) which is a counterpart of PCA
+for categorical variables.
+
+The results of the MCA below show that the variability in the data is divided into
+many dimensions. The first 6 dimensions capture approximately 55% of variation
+in the data.
+
+The first 10 individuals (survey responses) are also shown, with their dimension coordinates, contributions to the dimension as well as squared correlations with the dimension.
+
+The output shows also results w.r.t. the first 10 categories of variables. The value of v test statistic shows whether the category has a statistically significant effect
+on the dimension (values outside [-1.96,1.96] indicate significance at 95% confidence level). As for the first dimension, all categories apart from category milk seem to be statistically significant. Categorical variables
+indicating where the tea is bought from (where) and whether tea is bought in bags, unpackaged or both (how) do have the strongest correlations both with dimension 1 and 2. 
+
+```{r}
+
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+# summary of the model
+summary(mca)
+
+```
+Below is a biplot of the MCA results. The plot is a bit messy and not so easy to
+interpret. One can however see that categories indicating that tea is bought from a tea shop and is is bought unpackages are similar, which makes sense! The first dimension seems to depict some kind of a tea consumer profile. On the left side of the axis are placed
+students and employees who buy their tea bags from chain stores. On the right side of the axis one can find seniors who have time to enjoy their tea with lemon at tea rooms.
+
+Overall, I found that with these variables, the MCA results are a bit difficult to interpret. I would thus continue exploring the other variables in the data in order to fine-tune my analysis of tea consumption habits! 
+
+```{r, fig.width=6, fig.height=6}
+# visualize MCA
+plot(mca, invisible=c("ind"), habillage = "quali", xlim=c(-2,2))
+
+
+```
+
+
