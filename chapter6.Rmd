@@ -118,7 +118,7 @@ ggplot(RATSS, aes(x = Time, y = mean, linetype=Group, shape = Group)) +
 
 I next calculate a simple summary measure aiming to describe the differences in weight growth between the diet groups. I use as a summary measure the difference between the last and the first weight measurements. 
 
-The box plot below shows that the differences in weight change is quite clear between groups. Group 2 seems to have an oulier whose weight change is exceptionally low. I remove this observation and draw the box plot again.
+The box plot below shows that the differences in weight change are quite clear between groups. Group 2 seems to have an outlier whose weight change is exceptionally low. I remove this observation and draw the box plot again.
 
 ```{r}
 # day of first measurement
@@ -166,7 +166,7 @@ anova(fit)
 ```
 
 The ANOVA results show that the group differences in weight gain are highly significant
-(with risk of falsely assuming a group difference 0.007), even after accounting for differences in rats' weights at first measurement. Thus, according to these preliminary analyses, the diet seems to have a statistically significant effect of rats' weight growth. 
+(with risk of falsely assuming a group difference 0.0007), even after accounting for differences in rats' weights at first measurement. Thus, according to these preliminary analyses, the diet seems to have a statistically significant effect of rats' weight growth. 
 
 ## Linear mixed effects models
 
@@ -182,7 +182,7 @@ ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
   scale_linetype_manual(values = rep(1:10, times=4)) +
   facet_grid(. ~ treatment, labeller = label_both) +
   scale_y_continuous(name = "bprs") +
-    theme(legend.position = "bottom")
+    theme(legend.position = "none")
 
 ```
 
@@ -194,7 +194,7 @@ Repeated measurement data consists of several measurements per individual that a
 
 Even though a simple linear regression model assumes independency of  observations and  is therefore inappropriate for repeated measurement data, I shall start my modeling exercise with it.
 
-As can be seen below, the treatment group has no statistically significant effect on bprs score. Each additional week decreases the bprs score by 2.2 points. The effect is highly significant. The pre-treatment bprs score is also a highly significant predictor of post-treatment score. Let's see how the model estimates change when I allow the measurements by the same individual be correlated.
+As can be seen below, the treatment group has no statistically significant effect on bprs score. Each additional week decreases the bprs score by 2.1 points. The effect is highly significant. The pre-treatment bprs score is also a highly significant predictor of post-treatment score. Let's see how the model estimates change when I allow the measurements by the same individual be correlated.
 
 
 
@@ -246,9 +246,8 @@ summary(BPRS_reg2)
 Next I estimate  a model that allows variation not only in the intercepts but also in the slopes of different individuals. 
 
 The effects of baseline weight and treatment are now larger. The treatment effect is still
-not statistically significant. The effect of time (week) is the same, but the standard error is larger. The variance of the random terms related to the slope of the regression line is small,
-suggesting that the individual-specific variation in the slopes may not be large. However,
-according to the likelihood ratio test, the model with both random intercept and slope fits the data better.
+not statistically significant. The effect of time (week) is the same, but the standard error is larger. According to the likelihood ratio test, the model with both random intercepts and slopes fits the data better than the model with random intercepts only
+.
 
 ```{r}
 # a random intercept and random slope model
@@ -296,7 +295,8 @@ p1 <- ggplot(BPRSLB, aes(x = week, y = bprs, group = ID)) +
   geom_line(aes(linetype = treatment)) +
   scale_x_continuous(name = "week") +
   scale_y_continuous(name = "bprs score", breaks = seq(0, 100, 20), limits=c(0,100)) +
-  theme(legend.position = "top")
+  theme(legend.position = "bottom") +
+  ggtitle("Observed bprs values")
 
 # Create a vector of the fitted values
 Fitted <- fitted(BPRS_reg4)
@@ -309,7 +309,8 @@ p2 <-  ggplot(BPRSLB, aes(x = week, y = FittedVal, group = ID)) +
   geom_line(aes(linetype = treatment)) +
   scale_x_continuous(name = "week") +
   scale_y_continuous(name = "bprs score", breaks = seq(0, 100, 20), limits=c(0,100)) +
-  theme(legend.position = "top")
+  theme(legend.position = "bottom") +
+  ggtitle("Fitted bprs values")
 
 p12 <- ggarrange(p1,p2,ncol=2)
 p12
